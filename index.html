@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <style>
+  body {
+    background-color: #212121;
+    margin: 0;
+  }
+    #hex-grid {
+      height: 100vh;
+      width: 100vw;
+    }
+  </style>
+  <script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.5/svg.js"></script>
+  <script src="svg.path.js"></script>
+  <script src="https://unpkg.com/honeycomb-grid@1.3.5/dist/honeycomb.min.js"></script>
+</head>
+<body>
+  <svg id="hex-grid"></svg>
+
+  <script>
+
+      // 'use strict';
+      const draw = SVG('hex-grid')
+      const Hex = Honeycomb.extendHex({
+        size: 100,
+        orientation: 'flat', 
+
+        render (draw) {
+          const { x, y } = this.toPoint()
+          const corners = this.corners()
+
+          const position = this.toPoint()
+          const centerPosition = this.center().add(position)
+
+          this.draw = draw
+            .polygon(corners.map(({ x, y }) => `${x},${y}`))
+            .fill(this.x == 6 && this.y == 1 ? { opacity: 0.4, color: '#fff' } : 'none')
+            .stroke({ width: 1, color: '#999' })
+            .translate(x, y)
+        },
+
+        makeDefault () {
+          this.draw
+            .stop(true, true)
+            .fill({ opacity: 0, color: '#fff' })
+        },
+
+        highlight () {
+          this.draw
+            // stop running animation
+            .stop(true, true)
+            .fill({ opacity: .8, color: '#fff' })
+        },
+
+        drawFirstLine (draw, hexCoords) {
+          let xCoords = [];
+          let yCoords = [];
+
+          const corners = this.corners();
+
+          corners.forEach(function(item) {
+            xCoords.push(item.x);
+            yCoords.push(item.y);
+          });
+          
+          let hexWidth = Math.max.apply(null, xCoords);
+        
+          let hexHeight = Math.max.apply(null, yCoords);
+
+          this.draw = draw
+            .path()
+            .M((corners[2].x),
+             (corners[2].y))
+            .L((corners[3].x), 
+             (corners[3].y))
+            .stroke({color: '#fff'})
+            .drawAnimated({ duration: 300 })
+        }
+      })
+      
+      const Grid = Honeycomb.defineGrid(Hex)
+      const grid = Grid.rectangle({
+        width: 2,
+        height: 2,
+        // render each hex, passing the draw instance
+        onCreate(hex) {
+          hex.render(draw)
+        }
+      })
+
+      document.addEventListener('mouseover', ({ offsetX, offsetY }) => {
+        const hexCoordinates = Grid.pointToHex([offsetX, offsetY])
+        const hex = grid.get(hexCoordinates)
+        const coords = [[0,1], [1,1]];
+
+        coords.forEach(function(elem) {
+          if (hex == grid.get(elem)) {
+            grid.get(elem).highlight()
+            // hex.drawFirstLine(draw, elem)
+          } else {
+            grid.get(elem).makeDefault()
+          }
+        });
+      })
+
+  </script>
+</body>
+</html>
